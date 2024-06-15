@@ -22,12 +22,27 @@ class ResizeImage implements ResizesImage
 
             $image = (new Size())->runMaxResize($orientedImage, $width, $height);
 
-            $asset->disk()->filesystem()->put($asset->path(), $image->encode());
+            $encodedImage = $image->encode(null, config('image-optimize.default_quality'))->getEncoded();
 
-            $asset->merge(['image-optimized' => '1']);
+            $checkIfSmaller = config('image-optimize.only_if_smaller');
 
-            $asset->save();
-            $asset->meta();
+            if($checkIfSmaller) {
+                $originalFileSize = $asset->size();
+                $newFileSize = strlen($encodedImage);
+            }
+            
+            if (!$checkIfSmaller || ($newFileSize && $newFileSize < $originalFileSize)) {
+                $asset->disk()->filesystem()->put($asset->path(), $encodedImage);
+                $asset->merge(['image-optimized' => '1', 'image-optimize-ignored-filesize' => null]);
+                $asset->save();
+                $asset->meta();
+            } elseif(isset($newFileSize)) {
+                $asset->merge([
+                    'image-optimize-ignored-filesize' => $newFileSize
+                ]);
+                $asset->save();
+                $asset->meta();
+            }
         } catch (NotReadableException) {
             return;
         }

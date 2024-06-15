@@ -8,9 +8,6 @@ use JustBetter\ImageOptimize\Actions\ResizeImages;
 use JustBetter\ImageOptimize\Commands\ResizeImagesCommand;
 use Statamic\Facades\CP\Nav;
 use Statamic\Providers\AddonServiceProvider;
-use JustBetter\ImageOptimize\Listeners\AssetUploadedListener;
-use Statamic\Events\AssetUploaded;
-use Statamic\Events\AssetReuploaded;
 
 class ServiceProvider extends AddonServiceProvider
 {
@@ -60,13 +57,14 @@ class ServiceProvider extends AddonServiceProvider
             ->bootNav()
             ->handleTranslations();
     }
-
-
-
+    
     public function bootEvents(): static
     {
-        Event::listen([AssetUploaded::class, AssetReuploaded::class], AssetUploadedListener::class);
-
+        $optimizeEvents = config('image-optimize.events') ?? [];
+        if(count($optimizeEvents)) {
+            Event::listen($optimizeEvents, config('image-optimize.listener'));
+        }
+        
         return $this;
     }
 
