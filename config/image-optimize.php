@@ -26,4 +26,7 @@ return [
     ],
 
     'listener' => \JustBetter\ImageOptimize\Listeners\AssetUploadedListener::class,
+
+    // You can exclude containers from optimization entirely here
+    'excluded_containers' => [],
 ];
